@@ -17,12 +17,12 @@ app = FastAPI(
     version="0.0.1",
     terms_of_service="http://example.com/terms/",
     contact={
-        "name": "Lucas Pierce",
-        "email": "lupierce@calpoly.edu",
+        "name": "Ethan Vosburg",
+        "email": "evosburg@calpoly.edu",
     },
 )
 
-origins = ["https://potion-exchange.vercel.app"]
+origins = ["https://potion-exchange.velupierce@calpoly.edurcel.app"]
 
 app.add_middleware(
     CORSMiddleware,

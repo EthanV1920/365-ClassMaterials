@@ -1,4 +1,8 @@
+import sqlalchemy
 from fastapi import APIRouter
+
+# User python imports
+from src import database as db
 
 router = APIRouter()
 
@@ -18,3 +22,8 @@ def get_catalog():
                 "potion_type": [100, 0, 0, 0],
             }
         ]
+
+
+# Adding SQL execution
+#with db.engine.begin() as connection:
+#    result = connection.execute(sqlalchemy.text())
