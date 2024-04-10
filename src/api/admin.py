@@ -11,6 +11,7 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 @router.post("/reset")
 def reset():
     """
@@ -27,5 +28,7 @@ def reset():
 
     with db.engine.begin() as connection:
         connection.execute(sql)
-    return "OK"
 
+    print("Reset Store")
+
+    return "OK"
