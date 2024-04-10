@@ -39,8 +39,11 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
     # Adding SQL execution
-#    with db.engine.begin() as connection:
-#        result = connection.execute(sqlalchemy.text())
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text())
+
+    for row in result:
+        print(row)
 
     return [
             {
