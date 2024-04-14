@@ -22,7 +22,9 @@ def reset():
     sql = sqlalchemy.text("""
                           UPDATE global_inventory
                           SET gold = 100,
+                          num_red_potions = 0,
                           num_green_potions = 0,
+                          num_blue_potions = 0,
                           num_red_ml = 0,
                           num_green_ml = 0,
                           num_blue_ml = 0;
