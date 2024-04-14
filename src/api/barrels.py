@@ -122,75 +122,50 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     print(wholesale_catalog)
 
     # sql select statements for ml and gold
-    sql = sqlalchemy.text("""
-                          SELECT
-                          num_red_potions,
-                          num_green_potions,
-                          num_blue_potions,
-                          gold
-                          FROM global_inventory
+    gold_sql = sqlalchemy.text("""
+                          select
+                            gold
+                          from
+                            global_inventory;
+                          """)
+
+    potion_sql = sqlalchemy.text("""
+                          select
+                              quantity
+                          from
+                            potion_inventory
+                          where
+                            id <= 4;
                           """)
     with db.engine.begin() as connection:
-        inventory = connection.execute(sql).fetchall()
+        gold = connection.execute(gold_sql).scalar()
+        inventory = connection.execute(potion_sql).fetchall()
         print(f"Potion Count: {inventory}")
         # for potion in inventory.fetchall():
         #     print(f"Potion Count: {potion}")
 
-    red_sku = ''
-    green_sku = ''
-    blue_sku = ''
+    potions_to_buy = [["", 0], ["", 0], ["", 0], ["", 0]]
     willSpend = 0
-    gold = inventory[0][3]
 
     # barrel buying logic
     for barrel in wholesale_catalog:
-        if barrel.potion_type == [100, 0, 0, 0]:
+        for index, potion in enumerate(barrel.potion_type):
+            # print(f"Index: {index}")
             forecast = barrel.price + willSpend
-            if inventory[0][0] < 10 and forecast < gold:
-                buy_red_count = 1
-                willSpend += barrel.price * buy_red_count
-            else:
-                buy_red_count = 0
-
-            red_sku = barrel.sku
-            print(f"red sku: {red_sku}, Buying:{buy_red_count}")
-
-        if barrel.potion_type == [0, 100, 0, 0]:
-            forecast = barrel.price + willSpend
-            if inventory[0][1] < 10 and willSpend < forecast < gold:
-                buy_green_count = 1
-                willSpend += barrel.price * buy_green_count
-            else:
-                buy_green_count = 0
-
-            green_sku = barrel.sku
-            print(f"green sku: {green_sku}, Buying:{buy_green_count}")
-
-        if barrel.potion_type == [0, 0, 100, 0]:
-            forecast = barrel.price + willSpend
-            if inventory[0][2] < 10 and willSpend < forecast < gold:
-                buy_blue_count = 1
-                willSpend += barrel.price * buy_blue_count
-            else:
-                buy_blue_count = 0
-
-            blue_sku = barrel.sku
-            print(f"blue sku: {blue_sku}, Buying:{buy_blue_count}")
+            if inventory[index][0] < 10 and forecast < gold and potion > 0:
+                print(f"Barrel sku: {barrel.sku}")
+                potions_to_buy[index][0] = barrel.sku
+                potions_to_buy[index][1] += 100 / potion
+                willSpend += barrel.price * potions_to_buy[index][1]
 
     print(f"Estimated cost of product is {willSpend}")
+    print(f"Potions to Buy: {potions_to_buy}")
 
+    purchase_request = ""
+    for potions in potions_to_buy:
+        purchase_request += f"""{{
+                "sku": {potions[0]},
+                "quantity": {potions[1]},
+                }},"""
 
-    return [
-            {
-                "sku": red_sku,
-                "quantity": buy_red_count,
-                },
-            {
-                "sku": green_sku,
-                "quantity": buy_green_count,
-                },
-            {
-                "sku": blue_sku,
-                "quantity": buy_blue_count,
-                },
-            ]
+    return [purchase_request]
