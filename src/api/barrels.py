@@ -30,45 +30,57 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """
 
     spent = 0
-    ml_bought = 0
+    potion_ml = [0, 0, 0, 0]
 
     for barrel in barrels_delivered:
+        for index, potion in enumerate(potion_ml):
+            potion_ml[index] += barrel.potion_type[index]
+
         spent += (barrel.price * barrel.quantity)
-        ml_bought += (barrel.ml_per_barrel * barrel.quantity)
-        print(f"Bought ml: {ml_bought}")
-        print(f"Spent: {spent}")
+
+    print(f"Bought ml: {potion_ml}")
+    print(f"Spent: {spent}")
 
     # sql select statements for ml and gold
     ml_sql = sqlalchemy.text("""
-                          SELECT num_green_ml
-                          FROM global_inventory
-                          """)
+                             SELECT num_red_ml, num_green_ml, num_blue_ml
+                             FROM global_inventory
+                             """)
 
     gold_sql = sqlalchemy.text("""
-                          SELECT gold
-                          FROM global_inventory
-                          """)
+                               SELECT gold
+                               FROM global_inventory
+                               """)
+
     # sql update stamtents for ml and gold
     update_sql = sqlalchemy.text("""
                                  UPDATE global_inventory
                                  SET gold = :gold,
-                                 num_green_ml = :ml;
+                                 num_red_ml = :rml,
+                                 num_green_ml = :gml,
+                                 num_blue_ml = :bml;
                                  """)
 
     # sql execution
     with db.engine.begin() as connection:
         # select sql
-        potion_ml = connection.execute(ml_sql).scalar()
+        potion_ml_result = connection.execute(ml_sql)
         gold = connection.execute(gold_sql).scalar()
 
         # gold and ml manipulation
-        potion_ml += ml_bought
+        for potion in potion_ml_result.fetchall():
+            for index, volume in enumerate(potion):
+                potion_ml[index] += volume
+
         gold -= spent
-        print(f"Potions ml: {potion_ml}")
+        print(f"Potions to DB: {potion_ml}")
         print(f"Gold: {gold}")
 
         # update sql
-        connection.execute(update_sql, {"gold": gold, "ml": potion_ml})
+        connection.execute(update_sql, {"gold": gold,
+                                        "rml": potion_ml[0],
+                                        "gml": potion_ml[1],
+                                        "bml": potion_ml[2]})
 
     print(f"barrels delivered: {barrels_delivered} order_id: {order_id}")
 
@@ -80,28 +92,53 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """
     Version 1: if you have less than 10 potions buy more barrels
+    TODO: add a tracking system for unique potions
     """
     print(wholesale_catalog)
 
     # sql select statements for ml and gold
     sql = sqlalchemy.text("""
-                          SELECT num_green_ml
+                          SELECT num_green_ml, num_red_ml, num_blue_ml
                           FROM global_inventory
                           """)
     with db.engine.begin() as connection:
         potion_count = connection.execute(sql).scalar()
 
+    red_sku = ''
+    green_sku = ''
+    blue_sku = ''
+
+    # barrel buying logic
     if potion_count < 10:
         buy_green_count = 1
+    else:
+        buy_green_count = 0
+
+    buy_red_count = 0
+    buy_blue_count = 0
 
     for barrel in wholesale_catalog:
+        if barrel.potion_type == [100, 0, 0, 0]:
+            red_sku = barrel.sku
+            print(f"red sku: {red_sku}")
         if barrel.potion_type == [0, 100, 0, 0]:
-            sku = barrel.sku
-            print(f"SKU: {sku}")
+            green_sku = barrel.sku
+            print(f"green sku: {green_sku}")
+        if barrel.potion_type == [0, 0, 100, 0]:
+            blue_sku = barrel.sku
+            print(f"blue sku: {blue_sku}")
 
     return [
             {
-                "sku": sku,
+                "sku": red_sku,
+                "quantity": buy_red_count,
+                },
+            {
+                "sku": green_sku,
                 "quantity": buy_green_count,
-                }
+                },
+            {
+                "sku": blue_sku,
+                "quantity": buy_blue_count,
+                },
             ]
