@@ -33,8 +33,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     potion_ml = [0, 0, 0, 0]
 
     for barrel in barrels_delivered:
-        for index, potion in enumerate(potion_ml):
-            potion_ml[index] += barrel.potion_type[index]
+        for i, potion in enumerate(potion_ml):
+            potion_ml[i] += (barrel.potion_type[i]/100) * barrel.ml_per_barrel
 
         spent += (barrel.price * barrel.quantity)
 
@@ -61,6 +61,24 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                                  num_blue_ml = :bml;
                                  """)
 
+    log_sql = sqlalchemy.text("""
+                              insert into
+                              wholesale_purchase_history (
+                                  order_id,
+                                  sku,
+                                  ml_per_barrel,
+                                  potion_type,
+                                  price,
+                                  quantity)
+                              values (
+                                  :order_id,
+                                  :sku,
+                                  :ml_per_barrel,
+                                  :potion_type,
+                                  :price,
+                                  :quantity)
+                              """)
+
     # sql execution
     with db.engine.begin() as connection:
         # select sql
@@ -81,6 +99,13 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                                         "rml": potion_ml[0],
                                         "gml": potion_ml[1],
                                         "bml": potion_ml[2]})
+        for barrel in barrels_delivered:
+            connection.execute(log_sql, {"order_id": order_id,
+                                         "sku": barrel.sku,
+                                         "ml_per_barrel": barrel.ml_per_barrel,
+                                         "potion_type": str(barrel.potion_type),
+                                         "price": barrel.price,
+                                         "quantity": barrel.quantity})
 
     print(f"barrels delivered: {barrels_delivered} order_id: {order_id}")
 
