@@ -12,32 +12,32 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
+    catalog = ""
+
+    # SQL statements
+    select_sql = sqlalchemy.text("""
+                                 SELECT *
+                                 FROM
+                                     potion_inventory
+                                 WHERE
+                                     quantity > 0;
+                                 """)
+
     # Adding SQL execution
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(
-            "SELECT gold FROM global_inventory"))
+        available_potions = connection.execute(select_sql).fetchall()
+        print(f"Available Potions: {available_potions}")
 
-    for row in result:
-        print(row[0])
-        goldCount = row[0]
-        goldCount += 100
-        print(goldCount)
+        for potions in available_potions:
+            catalog += f"""
+                           {{
+                               "sku": {potions[1]},
+                               "name": {potions[2]},
+                               "quantity": {potions[3]},
+                               "price": {potions[4]},
+                               "potion_type": {potions[5]},
+                               }},"""
 
-        sql = sqlalchemy.text("""
-                              UPDATE global_inventory
-                              SET gold = :gold
-                              WHERE num_green_potions = 1
-                              """)
-        # print(sql)
-        with db.engine.begin() as connection:
-            connection.execute(sql, {"gold": goldCount})
+        print(f"Catalog: {catalog}")
 
-    return [
-            {
-                "sku": "RED_POTION_0",
-                "name": "red potion",
-                "quantity": 1,
-                "price": 50,
-                "potion_type": [100, 0, 0, 0],
-            }
-        ]
+    return [catalog]
