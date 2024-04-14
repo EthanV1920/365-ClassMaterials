@@ -21,7 +21,10 @@ class PotionInventory(BaseModel):
 
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
-    """ """
+    """
+    Receive the bottles that were ordered and add them to your inventory as
+    well as subtract the volume of each potion that was used.
+    """
     print(f"potions delivered: {potions_delivered} order_id: {order_id}")
 
     bottled_potions = [0, 0, 0, 0]
@@ -45,10 +48,19 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                                  SET
                                  num_red_ml = :red_ml,
                                  num_green_ml = :green_ml,
-                                 num_blue_ml = :blue_ml,
-                                 num_red_potions = :red_potions,
-                                 num_green_potions = :green_potions,
-                                 num_blue_potions = :blue_potions;
+                                 num_blue_ml = :blue_ml;
+
+                                 UPDATE potion_inventory
+                                 SET quantity = :red_potions
+                                 WHERE id = 1;
+
+                                 UPDATE potion_inventory
+                                 SET quantity = :green_potions
+                                 WHERE id = 2;
+
+                                 UPDATE potion_inventory
+                                 SET quantity = :blue_potions
+                                 where id = 3;
                                  """)
 
     # Adding SQL execution
@@ -75,7 +87,8 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 @router.post("/plan")
 def get_bottle_plan():
     """
-    Go from barrel to bottle.
+    Get the volume of liquid for each color of potion and then figure out how
+    many bottles will be needed. Return your bottleing plan.
     """
 
     # Each bottle has a quantity of what proportion of red, blue, and
