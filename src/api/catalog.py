@@ -12,7 +12,7 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
-    catalog = ""
+    catalog = []
 
     # SQL statements
     select_sql = sqlalchemy.text("""
@@ -29,13 +29,14 @@ def get_catalog():
         print(f"Available Potions: {available_potions}")
 
         for potions in available_potions:
-            catalog += f""" {{
-                "sku": {potions[1]},
-                "name": {potions[2]},
-                "quantity": {potions[3]},
-                "price": {potions[4]},
-                "potion_type": {potions[5]}
-                }},"""
+            print(f"Potion 5: {potions[5]}")
+            catalog.append({
+                "sku": potions[1],
+                "name": potions[2],
+                "quantity": potions[3],
+                "price": potions[4],
+                "potion_type": potions[5]
+                })
 
         print(f"Catalog: {catalog}")
 
