@@ -5,6 +5,7 @@ from src.api import auth
 
 # User python imports
 from src import database as db
+from src import potion_data as data
 
 router = APIRouter(
         prefix="/barrels",
@@ -32,88 +33,63 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     spent = 0
     potion_ml = [0, 0, 0, 0]
 
-    # for barrel in barrels_delivered:
-    #     for i, potion in enumerate(potion_ml):
-    #         potion_ml[i] += (barrel.potion_type[i]/100) * barrel.ml_per_barrel
-
-        # spent += (barrel.price * barrel.quantity)
-
     print(f"Bought ml: {potion_ml}")
     print(f"Spent: {spent}")
 
-    # sql select statements for ml and gold
-    ml_sql = sqlalchemy.text("""
-                             SELECT num_red_ml, num_green_ml, num_blue_ml
-                             FROM global_inventory
-                             """)
-
-    gold_sql = sqlalchemy.text("""
-                               SELECT gold
-                               FROM global_inventory
-                               """)
-
-    # sql update stamtents for ml and gold
-    update_sql = sqlalchemy.text("""
-                                 UPDATE global_inventory
-                                 SET gold = :gold,
-                                 num_red_ml = :rml,
-                                 num_green_ml = :gml,
-                                 num_blue_ml = :bml;
-                                 """)
-
-    log_sql = sqlalchemy.text("""
-                              insert into
-                              wholesale_purchase_history (
-                                  order_id,
-                                  sku,
-                                  ml_per_barrel,
-                                  potion_type,
-                                  price,
-                                  quantity)
-                              values (
-                                  :order_id,
-                                  :sku,
-                                  :ml_per_barrel,
-                                  :potion_type,
-                                  :price,
-                                  :quantity)
-                              """)
+    # log_sql = sqlalchemy.text("""
+    #                           insert into
+    #                           wholesale_purchase_history (
+    #                               order_id,
+    #                               sku,
+    #                               ml_per_barrel,
+    #                               potion_type,
+    #                               price,
+    #                               quantity,
+    #                               is_red,
+    #                               is_green,
+    #                               is_blue,
+    #                               is_dark)
+    #                           values (
+    #                               :order_id,
+    #                               :sku,
+    #                               :ml_per_barrel,
+    #                               :potion_type,
+    #                               :price,
+    #                               :quantity,
+    #                               :is_red,
+    #                               :is_green,
+    #                               :is_blue,
+    #                               :is_dark)
+    #                           """)
 
     # sql execution
-    with db.engine.begin() as connection:
-        # select sql
-        potion_ml_result = connection.execute(ml_sql)
-        gold = connection.execute(gold_sql).scalar()
-        purchasedVolume = [0, 0, 0, 0]
+    gold = data.get_gold()
+    # with db.engine.begin() as connection:
+    purchasedVolume = [0, 0, 0, 0]
 
-        # gold and ml manipulation
-        for barrel in barrels_delivered:
-            spent += (barrel.price * barrel.quantity)
-            for i, volume in enumerate(purchasedVolume):
-                purchasedVolume[i] += barrel.potion_type[i] * barrel.ml_per_barrel
+    # gold and ml manipulation
+    for barrel in barrels_delivered:
+        spent += (barrel.price * barrel.quantity)
+        for i, volume in enumerate(purchasedVolume):
+            purchasedVolume[i] += barrel.potion_type[i] * barrel.ml_per_barrel
+            data.add_wholesale_record(barrel, order_id)
+    # TODO: Add an assertion for the length of the 4 element
 
-            connection.execute(log_sql,
-                               {"order_id": order_id,
-                                "sku": barrel.sku,
-                                "ml_per_barrel": barrel.ml_per_barrel,
-                                "potion_type": str(barrel.potion_type),
-                                "price": barrel.price,
-                                "quantity": barrel.quantity})
-
-        for potion in potion_ml_result.fetchall():
-            for index, volume in enumerate(potion):
-                potion_ml[index] = purchasedVolume[index] + volume
+        # connection.execute(log_sql,
+        #                    {"order_id": order_id,
+        #                     "sku": barrel.sku,
+        #                     "ml_per_barrel": barrel.ml_per_barrel,
+        #                     "potion_type": str(barrel.potion_type),
+        #                     "price": barrel.price,
+        #                     "quantity": barrel.quantity,
+        #                     "is_red": bool(barrel.potion_type[0]),
+        #                     "is_green": bool(barrel.potion_type[1]),
+        #                     "is_blue": bool(barrel.potion_type[2]),
+        #                     "is_dark": bool(barrel.potion_type[3]),
+        #                     })
 
         gold -= spent
-        print(f"Purchased Volume: {purchasedVolume}")
-        print(f"Potions to DB: {potion_ml}")
         print(f"Gold: {gold}")
-
-        # update sql
-        connection.execute(update_sql, {"gold": gold,
-                                        "rml": potion_ml[0],
-                                        "gml": potion_ml[1],
-                                        "bml": potion_ml[2]})
 
     print(f"barrels delivered: {barrels_delivered} order_id: {order_id}")
 
@@ -124,19 +100,11 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """
-    Version 1: if you have less than 10 potions buy more barrels
-    TODO: add a tracking system for unique potions
+    Logic handling which barrels to buy
     """
     print(wholesale_catalog)
 
     # sql select statements for ml and gold
-    gold_sql = sqlalchemy.text("""
-                          select
-                            gold
-                          from
-                            global_inventory;
-                          """)
-
     potion_sql = sqlalchemy.text("""
                           select
                             quantity
@@ -145,28 +113,39 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                           where
                             id <= 4;
                           """)
-    with db.engine.begin() as connection:
-        gold = connection.execute(gold_sql).scalar()
-        inventory = connection.execute(potion_sql).fetchall()
-        print(f"Potion Inventory: {inventory}")
-        # for potion in inventory.fetchall():
-        #     print(f"Potion Count: {potion}")
+
+    raw_data = data.get_raw_volume()
+    print(f"raw_data: {raw_data}")
+    gold = data.get_gold()
+    print(f"gold: {gold}")
 
     barrels_to_buy = []
-    willSpend = 0
+    will_spend = 0
+    quantity_of_barrels = 1
+    # if I have less than this many ml, buy more
+    ml_threshold = 1000
 
     # barrel buying logic
+    # TODO: Improve barrel logic
     for barrel in wholesale_catalog:
+        # print(barrel)
         for index, potion in enumerate(barrel.potion_type):
-            # print(f"Index: {index}")
-            forecast = barrel.price + willSpend
-            if inventory[index][0] < 10 and forecast < gold and potion > 0:
-                print(f"Barrel sku: {barrel.sku}")
-                # barrels_to_buy[index][1] += 1 / potion
-                barrels_to_buy.append([barrel.sku, 1])
-                willSpend += barrel.price * barrels_to_buy[index][1]
 
-    print(f"Estimated cost of product is {willSpend}")
+            buy_more = (raw_data[index] < ml_threshold)
+            enough_gold = (barrel.price + will_spend < gold)
+            is_correct_color = (potion > 0)
+            # print(f"""
+            #       buy_more: {buy_more}
+            #       enough_gold: {enough_gold}
+            #       is_correct_color: {is_correct_color}
+            #       """)
+
+            if buy_more and enough_gold and is_correct_color:
+                print(f"Barrel sku: {barrel.sku}")
+                barrels_to_buy.append([barrel.sku, quantity_of_barrels])
+                will_spend += barrel.price * barrels_to_buy[index][1]
+
+    print(f"Estimated cost of product is {will_spend}")
     print(f"Potions to Buy: {barrels_to_buy}")
 
     purchase_request = []

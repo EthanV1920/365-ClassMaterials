@@ -11,10 +11,15 @@ router = APIRouter()
 def get_catalog():
     """
     Each unique item combination must have only a single price.
+    NOTE: can return a max of 6 potions
     """
     catalog = []
 
+    # TODO: Add External configuration in a view
+
     # SQL statements
+    # might want to integreat a view in here so that you can change logic from
+    # database layer
     select_sql = sqlalchemy.text("""
                                  SELECT *
                                  FROM

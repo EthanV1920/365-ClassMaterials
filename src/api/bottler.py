@@ -1,11 +1,12 @@
 import sqlalchemy
 from fastapi import APIRouter, Depends
-from enum import Enum
+# from enum import Enum
 from pydantic import BaseModel
 from src.api import auth
 
 # User python imports
 from src import database as db
+from src import potion_data as data
 
 router = APIRouter(
         prefix="/bottler",
@@ -70,7 +71,6 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         for index, volume in enumerate(potion_volume[0]):
             updated_ml[index] = volume - (bottled_potions[index] * 100)
 
-
     with db.engine.begin() as connection:
         connection.execute(update_sql, {
                                  "red_ml": updated_ml[0],
@@ -95,29 +95,18 @@ def get_bottle_plan():
     # green potion to add.
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
-    # Initial logic: bottle all barrels into red potions.
-
-    sql = sqlalchemy.text("""
-                          SELECT
-                          num_red_ml,
-                          num_green_ml,
-                          num_blue_ml
-                          FROM global_inventory
-                          """)
-
     # Possible potions
-    potions_to_bottle = [0, 0, 0]
+    potions_to_bottle = [0, 0, 0, 0]
 
     # Adding SQL execution
-    with db.engine.begin() as connection:
-        potion_volume = connection.execute(sql).fetchall()
-        print(f"Volume of Potions in Inventory: {potion_volume}")
-        for index, volume in enumerate(potion_volume[0]):
-            while volume >= 100:
-                potions_to_bottle[index] += 1
-                volume -= 100
+    potion_volume = data.get_raw_volume()
+    print(f"Volume of Potions in Inventory: {potion_volume}")
+    for index, volume in enumerate(potion_volume):
+        while volume >= 100:
+            potions_to_bottle[index] += 1
+            volume -= 100
 
-        print(f"Total requested bottles: {potions_to_bottle}")
+    print(f"Total requested bottles: {potions_to_bottle}")
 
     return [
             {
@@ -131,6 +120,10 @@ def get_bottle_plan():
             {
                 "potion_type": [0, 0, 100, 0],
                 "quantity": potions_to_bottle[2],
+                },
+            {
+                "potion_type": [0, 0, 0, 100],
+                "quantity": potions_to_bottle[3],
                 }
             ]
 
