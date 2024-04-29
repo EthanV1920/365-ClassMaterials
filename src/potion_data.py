@@ -7,7 +7,57 @@ import sqlalchemy
 from src import database as db
 
 
-def add_wholesale_record(barrel, order_id=-1):
+def add_bottle_record(used_volume):
+    """
+    add a bottle record to the wholesale table showing that ml was removed
+    while botteling
+    """
+    log_sql = sqlalchemy.text("""
+                              insert into
+                              wholesale_purchase_history (
+                                  order_id,
+                                  sku,
+                                  ml_per_barrel,
+                                  potion_type,
+                                  price,
+                                  quantity,
+                                  is_red,
+                                  is_green,
+                                  is_blue,
+                                  is_dark)
+                              values (
+                                  :order_id,
+                                  :sku,
+                                  :ml_per_barrel,
+                                  :potion_type,
+                                  :price,
+                                  :quantity,
+                                  :is_red,
+                                  :is_green,
+                                  :is_blue,
+                                  :is_dark)
+                              """)
+
+    for i, volume in enumerate(used_volume):
+        is_list = [0, 0, 0, 0]
+        is_list[i] = 1
+        db_request(log_sql,
+                   {"order_id": -1,
+                    "sku": 'bottle trueup',
+                    "ml_per_barrel": -volume,
+                    "potion_type": str(is_list),
+                    "price": 0,
+                    "quantity": 1,
+                    "is_red": bool(is_list[0]),
+                    "is_green": bool(is_list[1]),
+                    "is_blue": bool(is_list[2]),
+                    "is_dark": bool(is_list[3]),
+                    })
+
+    # return response
+
+
+def add_wholesale_barrel(barrel, order_id=-2):
     """
     add a wholesale record after receiving or taking out ml
     """
@@ -38,7 +88,7 @@ def add_wholesale_record(barrel, order_id=-1):
                               """)
 
     response = db_request(log_sql,
-                          {"order_id": 1,
+                          {"order_id": order_id,
                            "sku": barrel.sku,
                            "ml_per_barrel": barrel.ml_per_barrel,
                            "potion_type": str(barrel.potion_type),

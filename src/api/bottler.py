@@ -29,57 +29,17 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delivered: {potions_delivered} order_id: {order_id}")
 
     bottled_potions = [0, 0, 0, 0]
-    updated_ml = [0, 0, 0, 0]
 
     # TODO: will need to change later to handle mixed potions
     for potions in potions_delivered:
         for index, color in enumerate(potions.potion_type):
-            bottled_potions[index] += potions.quantity * color / 100
+            bottled_potions[index] += potions.quantity * color
 
-    sql = sqlalchemy.text("""
-                          SELECT
-                          num_red_ml,
-                          num_green_ml,
-                          num_blue_ml
-                          FROM global_inventory
-                          """)
+    data.add_bottle_record(bottled_potions)
 
-    update_sql = sqlalchemy.text("""
-                                 UPDATE global_inventory
-                                 SET
-                                 num_red_ml = :red_ml,
-                                 num_green_ml = :green_ml,
-                                 num_blue_ml = :blue_ml;
+    print(f"Bottled Potions: {bottled_potions}")
 
-                                 UPDATE potion_inventory
-                                 SET quantity = :red_potions
-                                 WHERE id = 1;
-
-                                 UPDATE potion_inventory
-                                 SET quantity = :green_potions
-                                 WHERE id = 2;
-
-                                 UPDATE potion_inventory
-                                 SET quantity = :blue_potions
-                                 where id = 3;
-                                 """)
-
-    # Adding SQL execution
-    with db.engine.begin() as connection:
-        potion_volume = connection.execute(sql).fetchall()
-        print(f"Volume of Potions Before Botteling: {potion_volume}")
-        for index, volume in enumerate(potion_volume[0]):
-            updated_ml[index] = volume - (bottled_potions[index] * 100)
-
-    with db.engine.begin() as connection:
-        connection.execute(update_sql, {
-                                 "red_ml": updated_ml[0],
-                                 "green_ml": updated_ml[1],
-                                 "blue_ml": updated_ml[2],
-                                 "red_potions": bottled_potions[0],
-                                 "green_potions": bottled_potions[1],
-                                 "blue_potions": bottled_potions[2]
-                                 })
+    # add to wholesale leader to track ml
 
     return "OK"
 

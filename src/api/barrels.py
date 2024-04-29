@@ -36,57 +36,18 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     print(f"Bought ml: {potion_ml}")
     print(f"Spent: {spent}")
 
-    # log_sql = sqlalchemy.text("""
-    #                           insert into
-    #                           wholesale_purchase_history (
-    #                               order_id,
-    #                               sku,
-    #                               ml_per_barrel,
-    #                               potion_type,
-    #                               price,
-    #                               quantity,
-    #                               is_red,
-    #                               is_green,
-    #                               is_blue,
-    #                               is_dark)
-    #                           values (
-    #                               :order_id,
-    #                               :sku,
-    #                               :ml_per_barrel,
-    #                               :potion_type,
-    #                               :price,
-    #                               :quantity,
-    #                               :is_red,
-    #                               :is_green,
-    #                               :is_blue,
-    #                               :is_dark)
-    #                           """)
-
     # sql execution
     gold = data.get_gold()
     # with db.engine.begin() as connection:
     purchasedVolume = [0, 0, 0, 0]
 
     # gold and ml manipulation
+    # TODO: Add an assertion for the length of the 4 element
     for barrel in barrels_delivered:
         spent += (barrel.price * barrel.quantity)
         for i, volume in enumerate(purchasedVolume):
             purchasedVolume[i] += barrel.potion_type[i] * barrel.ml_per_barrel
-            data.add_wholesale_record(barrel, order_id)
-    # TODO: Add an assertion for the length of the 4 element
-
-        # connection.execute(log_sql,
-        #                    {"order_id": order_id,
-        #                     "sku": barrel.sku,
-        #                     "ml_per_barrel": barrel.ml_per_barrel,
-        #                     "potion_type": str(barrel.potion_type),
-        #                     "price": barrel.price,
-        #                     "quantity": barrel.quantity,
-        #                     "is_red": bool(barrel.potion_type[0]),
-        #                     "is_green": bool(barrel.potion_type[1]),
-        #                     "is_blue": bool(barrel.potion_type[2]),
-        #                     "is_dark": bool(barrel.potion_type[3]),
-        #                     })
+            data.add_wholesale_barrel(barrel, order_id)
 
         gold -= spent
         print(f"Gold: {gold}")
