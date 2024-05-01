@@ -28,12 +28,36 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     """
     print(f"potions delivered: {potions_delivered} order_id: {order_id}")
 
+    potion_sql = sqlalchemy.text("""
+                                 insert into
+                                     potion_purchase_history (cart_id,
+                                                              sku,
+                                                              quantity)
+                                 values(
+                                     -1,
+                                     (select
+                                          sku
+                                      from
+                                          potion_inventory
+                                      where
+                                      potion_type = :potion_type),
+                                     :quantity
+                                     )
+                                 """)
+
+
     bottled_potions = [0, 0, 0, 0]
 
     # TODO: will need to change later to handle mixed potions
+    potion_types =[]
     for potions in potions_delivered:
+        potion_types.append({'potion_type': potions.potion_type,
+                             'quantity': potions.quantity})
         for index, color in enumerate(potions.potion_type):
             bottled_potions[index] += potions.quantity * color
+
+    with db.engine.begin() as connection:
+        connection.execute(potion_sql, potion_types)
 
     data.add_bottle_record(bottled_potions)
 

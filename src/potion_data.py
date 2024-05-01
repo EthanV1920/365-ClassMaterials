@@ -6,12 +6,30 @@ import sqlalchemy
 # User python imports
 from src import database as db
 
+def set_gold(delta_gold):
+    """
+    set the new gold price
+    """
+    gold_sql = sqlalchemy.text("""
+                               update global_inventory
+                               set
+                                   gold = gold + :delta_gold
+                               """)
+
+    return db_request(gold_sql, {'delta_gold': delta_gold})
+
 
 def add_customers(customers):
     """
-    given a list of customers add them to the customer table makeing sure to
+    given a list of customers add them to the customer table making sure to
     not add duplicates
     """
+    customer_sql = sqlalchemy.text("""
+                                   insert into
+                                   customer_list (
+
+
+                                   """)
 
 
 def add_bottle_record(used_volume):

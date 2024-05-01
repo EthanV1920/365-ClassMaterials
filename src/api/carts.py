@@ -178,6 +178,16 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     calculate final price and then finish sale
     """
     checkout_sql = sqlalchemy.text("""
+                                   insert into potion_purchase_history(cart_id, sku, quantity)
+                                   select
+                                       cart_id,
+                                       sku,
+                                       -quantity
+                                   from
+                                       carts
+                                   where
+                                       cart_id = :cart_id ;
+
                                    select
                                        sum(quantity) as potion_count
                                    from
@@ -191,16 +201,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                                        carts
                                        join potion_inventory on potion_inventory.sku = carts.sku;
 
-                                   insert into potion_purchase_history(cart_id, sku, quantity)
-                                   select
-                                       cart_id,
-                                       sku,
-                                       -quantity
-                                   from
-                                       carts
-                                   where
-                                   cart_id = :cart_id ;
-
 
                                    """)
 
@@ -212,7 +212,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         cost = checkout_info[1][0]
         print(f"cart: {cart_id} checked out with {potion_count} potion(s) costing {cost} gold")
 
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    data.set_gold(cost)
+
+    return {"total_potions_bought": potion_count, "total_gold_paid": cost}
 
 
 # Adding SQL execution

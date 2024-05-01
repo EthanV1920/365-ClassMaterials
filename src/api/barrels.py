@@ -45,12 +45,13 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     # TODO: Add an assertion for the length of the 4 element
     for barrel in barrels_delivered:
         spent += (barrel.price * barrel.quantity)
+        data.add_wholesale_barrel(barrel, order_id)
         for i, volume in enumerate(purchasedVolume):
             purchasedVolume[i] += barrel.potion_type[i] * barrel.ml_per_barrel
-            data.add_wholesale_barrel(barrel, order_id)
 
-        gold -= spent
-        print(f"Gold: {gold}")
+    gold -= spent
+    print(f"Gold: {gold}")
+    data.set_gold(-spent)
 
     print(f"barrels delivered: {barrels_delivered} order_id: {order_id}")
 
@@ -112,8 +113,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     purchase_request = []
     for potions in barrels_to_buy:
         purchase_request.append({
-                "sku": potions[0],
-                "quantity": potions[1]
+            "sku": potions[0],
+            "quantity": potions[1]
                 })
 
     return purchase_request
