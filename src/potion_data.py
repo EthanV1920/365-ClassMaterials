@@ -7,6 +7,13 @@ import sqlalchemy
 from src import database as db
 
 
+def add_customers(customers):
+    """
+    given a list of customers add them to the customer table makeing sure to
+    not add duplicates
+    """
+
+
 def add_bottle_record(used_volume):
     """
     add a bottle record to the wholesale table showing that ml was removed

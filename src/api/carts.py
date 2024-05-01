@@ -6,12 +6,13 @@ from enum import Enum
 
 # User python imports
 from src import database as db
+from src import potion_data as data
 
 router = APIRouter(
-        prefix="/carts",
-        tags=["cart"],
-        dependencies=[Depends(auth.get_api_key)],
-        )
+    prefix="/carts",
+    tags=["cart"],
+    dependencies=[Depends(auth.get_api_key)],
+)
 
 
 class search_sort_options(str, Enum):
@@ -33,7 +34,7 @@ def search_orders(
         search_page: str = "",
         sort_col: search_sort_options = search_sort_options.timestamp,
         sort_order: search_sort_order = search_sort_order.desc,
-        ):
+):
     """
     Search for cart line items by customer name and/or potion sku.
 
@@ -60,18 +61,18 @@ def search_orders(
     """
 
     return {
-            "previous": "",
-            "next": "",
-            "results": [
+        "previous": "",
+        "next": "",
+        "results": [
                 {
                     "line_item_id": 1,
                     "item_sku": "1 oblivion potion",
                     "customer_name": "Scaramouche",
                     "line_item_total": 50,
                     "timestamp": "2021-01-01T00:00:00Z",
-                    }
-                ],
-            }
+                }
+        ],
+    }
 
 
 class Customer(BaseModel):
@@ -83,17 +84,57 @@ class Customer(BaseModel):
 @router.post("/visits/{visit_id}")
 def post_visits(visit_id: int, customers: list[Customer]):
     """
-    Which customers visited the shop today?
+    Get the customers that visited the shop today then prints them in the
+    render log and passes them to the database.
     """
     print(customers)
 
-    return "OK"
+    log_sql = sqlalchemy.text("""
+                              insert into
+                                  customer_visits(customer_name,
+                                                character_class,
+                                                level)
+                              values
+                                  (:name,
+                                   :class,
+                                   :level);
+                              """)
+
+    customer_data = []
+    for customer in customers:
+        insert_statement = {'name': customer.customer_name,
+                            'class': customer.character_class,
+                            'level': customer.level}
+
+        customer_data.append(insert_statement)
+
+    with db.engine.begin() as connection:
+        result = connection.execute(log_sql, customer_data)
+
+    return result
 
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-    """ """
-    return {"cart_id": 1}
+    """
+    Create a new cart in the table and return the id to the buyer.
+    """
+    cart_sql = sqlalchemy.text("""
+                               insert into
+                                   carts (sku,
+                                          quantity)
+                               values
+                                   ('nosku', 0)
+                               returning
+                                   cart_id;
+                               """)
+
+    with db.engine.begin() as connection:
+        cart_id = connection.execute(cart_sql).scalar()
+
+    print(f"""New cart made for {Customer} cart_id: {cart_id}""")
+
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
@@ -103,8 +144,28 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
+    add_item = sqlalchemy.text("""
+                               insert into carts(cart_id,
+                                                 sku,
+                                                 quantity)
+                               values(:cart_id,
+                                      :sku,
+                                      :quantity);
+                               delete from carts
+                               where
+                                    cart_id = :cart_id
+                                    and sku = 'nosku'
+                                    and quantity = 0
+                               """)
+    line_values = {'cart_id': cart_id,
+                   'sku': item_sku,
+                   'quantity': cart_item.quantity}
 
-    return "OK"
+    with db.engine.begin() as connection:
+        result = connection.execute(add_item, line_values)
+        print(f"Added {cart_item.quantity} sku: {item_sku} to cart: {cart_id}")
+
+    return result
 
 
 class CartCheckout(BaseModel):
@@ -113,7 +174,43 @@ class CartCheckout(BaseModel):
 
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
-    """ """
+    """
+    calculate final price and then finish sale
+    """
+    checkout_sql = sqlalchemy.text("""
+                                   select
+                                       sum(quantity) as potion_count
+                                   from
+                                       carts
+                                   where
+                                   cart_id = :cart_id
+                                   union
+                                   select
+                                       sum(potion_inventory.price * carts.quantity) as potion_price
+                                   from
+                                       carts
+                                       join potion_inventory on potion_inventory.sku = carts.sku;
+
+                                   insert into potion_purchase_history(cart_id, sku, quantity)
+                                   select
+                                       cart_id,
+                                       sku,
+                                       -quantity
+                                   from
+                                       carts
+                                   where
+                                   cart_id = :cart_id ;
+
+
+                                   """)
+
+    checkout_values = {'cart_id': cart_id}
+
+    with db.engine.begin() as connection:
+        checkout_info = connection.execute(checkout_sql, checkout_values).fetchall()
+        potion_count = checkout_info[0][0]
+        cost = checkout_info[1][0]
+        print(f"cart: {cart_id} checked out with {potion_count} potion(s) costing {cost} gold")
 
     return {"total_potions_bought": 1, "total_gold_paid": 50}
 
