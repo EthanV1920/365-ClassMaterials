@@ -127,6 +127,21 @@ def add_wholesale_barrel(barrel, order_id=-2):
 
     return response
 
+
+def get_potion_count():
+    """
+    return the number of potions available in my inventory
+    """
+    potion_sql = sqlalchemy.text("""
+                                 select
+                                     coalesce(sum(quantity),0)
+                                 from
+                                     potion_purchase_history
+                                 """)
+
+    return db_request(potion_sql).scalar()
+
+
 def get_raw_volume():
     """
     return the raw ml for each color type

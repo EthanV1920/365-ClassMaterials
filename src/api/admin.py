@@ -21,19 +21,14 @@ def reset():
     # WARN: How to clear the table?
 
     sql = sqlalchemy.text("""
-                          UPDATE
+                          update
                               global_inventory
-                          SET
-                              gold = 100,
-                              num_red_ml = 0,
-                              num_green_ml = 0,
-                              num_blue_ml = 0;
-
-                          UPDATE
-                              potion_inventory
-                          SET
-                            quantity = 0;
-
+                          set
+                              gold = 100;
+                          delete from wholesale_purchase_history;
+                          delete from potion_purchase_history;
+                          delete from customer_visits;
+                          delete from carts;
                           """)
 
     with db.engine.begin() as connection:

@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
-from src import database as db
 import math
 import sqlalchemy
 
+from src import database as db
+from src import potion_data as data
 
 router = APIRouter(
         prefix="/inventory",
         tags=["inventory"],
-        dependencies=[Depends(auth.get_api_key)],
+
         )
 
 
@@ -20,26 +21,14 @@ def get_inventory():
     """
     print("Audit Being Performed")
 
-    potion_sql = sqlalchemy.text("""
-                                 SELECT sum(quantity)
-                                 FROM potion_inventory
-                                 """)
+    potion_count = data.get_potion_count()
 
-    ml_sql = sqlalchemy.text("""
-                             SELECT num_red_ml +
-                                    num_green_ml +
-                                    num_blue_ml
-                             FROM global_inventory
-                             """)
+    raw_ml = data.get_raw_volume()
+    ml_count = 0
+    for raw in raw_ml:
+        ml_count += raw
 
-    gold_sql = sqlalchemy.text("""
-                               SELECT gold
-                               FROM global_inventory
-                               """)
-    with db.engine.begin() as connection:
-        potion_count = connection.execute(potion_sql).scalar()
-        ml_count = connection.execute(ml_sql).scalar()
-        gold_count = connection.execute(gold_sql).scalar()
+    gold_count = data.get_gold()
 
     return {"number_of_potions": potion_count,
             "ml_in_barrels": ml_count,
