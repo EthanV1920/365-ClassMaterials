@@ -146,6 +146,7 @@ def get_raw_volume():
     """
     return the raw ml for each color type
     """
+    # TODO: remove union and change to a "group by" statement
     raw_sql = sqlalchemy.text("""
                               select
                                   'red' as potion_type,

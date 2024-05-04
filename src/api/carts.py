@@ -89,6 +89,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     print(customers)
 
+    # INFO: add a way to link to other categories
     log_sql = sqlalchemy.text("""
                               insert into
                                   customer_visits(customer_name,
@@ -111,6 +112,7 @@ def post_visits(visit_id: int, customers: list[Customer]):
     with db.engine.begin() as connection:
         result = connection.execute(log_sql, customer_data)
 
+    # TODO: I do not need to return
     return result
 
 
@@ -119,6 +121,9 @@ def create_cart(new_cart: Customer):
     """
     Create a new cart in the table and return the id to the buyer.
     """
+    # TODO: Add a carts table and cart_item table and then link them together
+    # cart item key potion_id + cart_id
+    # INFO: You can write "default_values" in order to use default
     cart_sql = sqlalchemy.text("""
                                insert into
                                    carts (sku,
@@ -130,6 +135,7 @@ def create_cart(new_cart: Customer):
                                """)
 
     with db.engine.begin() as connection:
+        # TODO: Change to scalar(1)
         cart_id = connection.execute(cart_sql).scalar()
 
     print(f"""New cart made for {Customer} cart_id: {cart_id}""")
@@ -177,6 +183,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """
     calculate final price and then finish sale
     """
+    # TODO: Clean this up; better separation of entities
+    # I need to separate out meaning of tables
+    # TODO: Combine the statements and remove the union
     checkout_sql = sqlalchemy.text("""
                                    insert into potion_purchase_history(cart_id, sku, quantity)
                                    select
@@ -207,6 +216,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     checkout_values = {'cart_id': cart_id}
 
     with db.engine.begin() as connection:
+        # TODO: Change fetchall() to first and then reference by name
         checkout_info = connection.execute(checkout_sql, checkout_values).fetchall()
         potion_count = checkout_info[0][0]
         cost = checkout_info[1][0]

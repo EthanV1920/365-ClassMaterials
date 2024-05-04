@@ -80,36 +80,31 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Possible potions
-    potions_to_bottle = [0, 0, 0, 0]
+    bottle_request = []
 
     # Adding SQL execution
+    # TODO: Add logic to make more potions of different types
     potion_volume = data.get_raw_volume()
     print(f"Volume of Potions in Inventory: {potion_volume}")
     for index, volume in enumerate(potion_volume):
+        potions_to_bottle = 0
         while volume >= 100:
-            potions_to_bottle[index] += 1
+            potions_to_bottle += 1
             volume -= 100
 
-    print(f"Total requested bottles: {potions_to_bottle}")
+        if potions_to_bottle > 0:
+            potion_type = [0, 0, 0, 0]
+            potion_type[index] = 100
+            bottle_request.append({
+                "potion_type": potion_type,
+                "quantity": potions_to_bottle,
+                })
 
-    return [
-            {
-                "potion_type": [100, 0, 0, 0],
-                "quantity": potions_to_bottle[0],
-                },
-            {
-                "potion_type": [0, 100, 0, 0],
-                "quantity": potions_to_bottle[1],
-                },
-            {
-                "potion_type": [0, 0, 100, 0],
-                "quantity": potions_to_bottle[2],
-                },
-            {
-                "potion_type": [0, 0, 0, 100],
-                "quantity": potions_to_bottle[3],
-                }
-            ]
+    # TODO: Remove any item that has 0 quantity
+
+    # print(f"Total requested bottles: {potions_to_bottle}")
+
+    return bottle_request
 
 
 if __name__ == "__main__":
