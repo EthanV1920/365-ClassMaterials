@@ -15,9 +15,9 @@ def get_catalog():
     """
     catalog = []
 
-    # TODO: Add External configuration in a view
+    # TODO: Add External configuration in a view (put this logic in a view)
     # TODO: I need to add a limit of 6 and logic to decide on what to show
-    #       probably base on customer level and type
+    #       probably base on customer level and type put this all in SQL
 
     # SQL statements
     # might want to integreat a view in here so that you can change logic from
@@ -58,4 +58,4 @@ def get_catalog():
 
         print(f"Catalog: {catalog}")
 
-    return [catalog]
+    return catalog
