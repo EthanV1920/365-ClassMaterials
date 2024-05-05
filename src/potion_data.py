@@ -6,6 +6,28 @@ import sqlalchemy
 # User python imports
 from src import database as db
 
+
+def add_time_table(timestamp):
+    """
+    given a time stamp that contains a day value and an hour value, add them
+    to a time table that can be referenced by other calls
+    """
+    time_sql = sqlalchemy.text("""
+                               insert into
+                               time_table(
+                                   day,
+                                   hour)
+                               values (
+                                   :day,
+                                   :hour)
+                               """)
+    time_options = {
+            'day': timestamp.day,
+            'hour': timestamp.hour}
+
+    db_request(time_sql, time_options)
+
+
 def set_gold(delta_gold):
     """
     set the new gold price

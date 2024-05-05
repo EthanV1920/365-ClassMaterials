@@ -92,28 +92,32 @@ def post_visits(visit_id: int, customers: list[Customer]):
     # INFO: add a way to link to other categories
     log_sql = sqlalchemy.text("""
                               insert into
-                                  customer_visits(customer_name,
-                                                character_class,
-                                                level)
-                              values
-                                  (:name,
-                                   :class,
-                                   :level);
+                                  customer_visits(
+                                      visit_id,
+                                      customer_name,
+                                      character_class,
+                                      level)
+                              values (
+                                  :visit_id,
+                                  :name,
+                                  :class,
+                                  :level);
                               """)
 
     customer_data = []
     for customer in customers:
-        insert_statement = {'name': customer.customer_name,
-                            'class': customer.character_class,
-                            'level': customer.level}
+        insert_statement = {
+                'visit_id': visit_id,
+                'name': customer.customer_name,
+                'class': customer.character_class,
+                'level': customer.level}
 
         customer_data.append(insert_statement)
 
     with db.engine.begin() as connection:
-        result = connection.execute(log_sql, customer_data)
+        connection.execute(log_sql, customer_data)
 
-    # TODO: I do not need to return
-    return result
+    return "OK"
 
 
 @router.post("/")
