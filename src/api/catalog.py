@@ -44,16 +44,16 @@ def get_catalog():
 
     # Adding SQL execution
     with db.engine.begin() as connection:
-        available_potions = connection.execute(select_sql).fetchall()
+        available_potions = connection.execute(select_sql)
         print(f"Available Potions: {available_potions}")
 
         for potions in available_potions:
             catalog.append({
-                "sku": potions[0],
-                "name": potions[1],
-                "quantity": potions[2],
-                "price": potions[3],
-                "potion_type": potions[4]
+                "sku": potions.potion_sku,
+                "name": potions.potion_name,
+                "quantity": potions.potion_quantity,
+                "price": potions.potion_price,
+                "potion_type": potions.potion_type
                 })
 
         print(f"Catalog: {catalog}")
