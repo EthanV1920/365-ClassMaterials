@@ -212,7 +212,9 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                                        sum(potion_inventory.price * carts.quantity) as potion_price
                                    from
                                        carts
-                                       join potion_inventory on potion_inventory.sku = carts.sku;
+                                       join potion_inventory on potion_inventory.sku = carts.sku
+                                    where
+                                       cart_id = :cart_id;
 
 
                                    """)
