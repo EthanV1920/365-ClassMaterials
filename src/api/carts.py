@@ -58,6 +58,12 @@ def search_orders(
     customer name, line item total (in gold), and timestamp of the order.
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
+
+    If I want to compare, I need to compare to an empty string
+
+    Use like for the sql statement ILIKE "%potion%"
+    grab 6 and then check if there are more and only return 5
+
     """
 
     return {
@@ -224,6 +230,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     with db.engine.begin() as connection:
         # TODO: Change fetchall() to first and then reference by name
         checkout_info = connection.execute(checkout_sql, checkout_values).fetchall()
+        # TODO: Get rid of magic numbers
         potion_count = checkout_info[0][0]
         cost = checkout_info[1][0]
         print(f"cart: {cart_id} checked out with {potion_count} potion(s) costing {cost} gold")
