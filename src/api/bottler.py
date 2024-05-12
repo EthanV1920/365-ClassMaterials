@@ -81,6 +81,7 @@ def get_bottle_plan():
 
     # Possible potions
     bottle_request = []
+    potion_count = data.get_potion_count()
 
     # Adding SQL execution
     # TODO: Add logic to make more potions of different types
@@ -89,6 +90,8 @@ def get_bottle_plan():
     for index, volume in enumerate(potion_volume):
         potions_to_bottle = 0
         while volume >= 100:
+            if potions_to_bottle >= (50 - potion_count)/3 - 1:
+                break
             potions_to_bottle += 1
             volume -= 100
 
@@ -101,8 +104,9 @@ def get_bottle_plan():
                 })
 
     # TODO: Remove any item that has 0 quantity
+    print(f"Potions to Bottle {potions_to_bottle}")
 
-    # print(f"Total requested bottles: {potions_to_bottle}")
+    print(f"Total requested bottles: {bottle_request}")
 
     return bottle_request
 
