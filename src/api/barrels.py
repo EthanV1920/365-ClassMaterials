@@ -84,31 +84,38 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     barrels_to_buy = []
     will_spend = 0
     quantity_of_barrels = 1
-    # if I have less than this many ml, buy more
-    ml_threshold = 1000
+    # Calculate the available room
+    globals = data.get_globals()
+    room = globals.space - sum(raw_data)
+    volume_to_buy = 0
 
+    print(f"Room: {room}")
     # barrel buying logic
     # TODO: Improve barrel logic
     for barrel in wholesale_catalog:
         # print(barrel)
         for index, potion in enumerate(barrel.potion_type):
 
-            buy_more = (raw_data[index] < ml_threshold)
+            is_correct_barrel = False
+            if (("LARGE" in barrel.sku) or ("MEDIUM" in barrel.sku)):
+                is_correct_barrel = True
+
             enough_gold = (barrel.price + will_spend < gold)
             is_correct_color = (potion > 0)
-            # print(f"""
-            #       buy_more: {buy_more}
-            #       enough_gold: {enough_gold}
-            #       is_correct_color: {is_correct_color}
-            #       """)
 
-            if buy_more and enough_gold and is_correct_color:
+            buy_more = False
+            if (volume_to_buy + barrel.ml_per_barrel < room):
+                buy_more = True
+
+            if buy_more and enough_gold and is_correct_color and is_correct_barrel:
                 print(f"Barrel sku: {barrel.sku}")
                 barrels_to_buy.append([barrel.sku, quantity_of_barrels])
                 will_spend += barrel.price * barrels_to_buy[index][1]
+                volume_to_buy += barrel.ml_per_barrel
 
     print(f"Estimated cost of product is {will_spend}")
-    print(f"Potions to Buy: {barrels_to_buy}")
+    print(f"Barrels to Buy: {barrels_to_buy}")
+    print(f"Volume to Buy: {volume_to_buy}")
 
     purchase_request = []
     for potions in barrels_to_buy:
