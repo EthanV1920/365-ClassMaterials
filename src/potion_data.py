@@ -235,6 +235,38 @@ def get_gold():
                     global_inventory;
                   """)
     return db_request(gold_sql).scalar()
+ 
+
+def get_globals():
+    """
+    return available globals as set in the database
+    """
+
+    globals_sql = sqlalchemy.text("""
+                                  with
+                                  globals as (
+                                      select
+                                          *
+                                      from
+                                          global_variables
+                                      ),
+                                  inventory as (
+                                      select
+                                          (sum(space) * 10000) as space,
+                                          (sum(potion_storage) * 50) as potion_storage
+                                      from
+                                          inventory_history
+                                      )
+                                  select
+                                      *
+                                  from
+                                      globals,
+                                      inventory
+                                  """)
+
+    global_variables = db_request(globals_sql).fetchone()
+
+    return global_variables
 
 
 def db_request(query, options={}):

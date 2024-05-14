@@ -45,11 +45,10 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                                      )
                                  """)
 
-
     bottled_potions = [0, 0, 0, 0]
 
     # TODO: will need to change later to handle mixed potions
-    potion_types =[]
+    potion_types = []
     for potions in potions_delivered:
         potion_types.append({'potion_type': potions.potion_type,
                              'quantity': potions.quantity})
@@ -87,10 +86,12 @@ def get_bottle_plan():
     # TODO: Add logic to make more potions of different types
     potion_volume = data.get_raw_volume()
     print(f"Volume of Potions in Inventory: {potion_volume}")
+    potion_storage = data.get_globals().potion_storage
+    print(f"Potion Storage Available: {potion_storage}")
     for index, volume in enumerate(potion_volume):
         potions_to_bottle = 0
         while volume >= 100:
-            if potions_to_bottle >= (50 - potion_count)/3 - 1:
+            if potions_to_bottle >= (potion_storage - potion_count)/3 - 1:
                 break
             potions_to_bottle += 1
             volume -= 100
@@ -103,7 +104,6 @@ def get_bottle_plan():
                 "quantity": potions_to_bottle,
                 })
 
-    # TODO: Remove any item that has 0 quantity
     print(f"Potions to Bottle {potions_to_bottle}")
 
     print(f"Total requested bottles: {bottle_request}")
