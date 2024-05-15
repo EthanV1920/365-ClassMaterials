@@ -88,10 +88,18 @@ def get_bottle_plan():
     print(f"Volume of Potions in Inventory: {potion_volume}")
     potion_storage = data.get_globals().potion_storage
     print(f"Potion Storage Available: {potion_storage}")
+
+    raw = data.get_raw_volume()
+    total_types = 0
+    for item in raw:
+        if (item > 0):
+            total_types += 1
+    print(f"Total Types: {total_types}")
+
     for index, volume in enumerate(potion_volume):
         potions_to_bottle = 0
         while volume >= 100:
-            if potions_to_bottle >= (potion_storage - potion_count)/3 - 1:
+            if potions_to_bottle >= (potion_storage - potion_count)/total_types - 1:
                 break
             potions_to_bottle += 1
             volume -= 100
