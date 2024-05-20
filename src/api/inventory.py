@@ -105,6 +105,8 @@ def deliver_capacity_plan(capacity_purchase: CapacityPurchase, order_id: int):
                          "order_id": order_id
                         }
 
+    data.set_gold(-(capacity_purchase.potion_capacity + capacity_purchase.ml_capacity))
+
     with db.engine.begin() as connection:
         connection.execute(inventory_sql, inventory_options)
 
