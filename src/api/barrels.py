@@ -111,7 +111,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 print(f"Barrel sku: {barrel.sku}")
                 barrels_to_buy.append([barrel.sku, quantity_of_barrels])
                 print(f"Barrels to buy: {barrels_to_buy}")
-                will_spend += barrel.price * barrels_to_buy[index][1]
+                will_spend += barrel.price * barrels_to_buy[-1][1]
                 volume_to_buy += barrel.ml_per_barrel
 
     print(f"Estimated cost of product is {will_spend}")
