@@ -44,8 +44,8 @@ def get_capacity_plan():
     """
     gold = data.get_gold()
     golbals = data.get_globals()
-    potion_requested = golbals.more_capacity
-    ml_requested = golbals.more_potions
+    potion_requested = golbals.more_potions
+    ml_requested = golbals.more_capacity
     print(f"More Potions: {potion_requested}")
     print(f"More {ml_requested}")
     print(f"Gold: {gold}")
