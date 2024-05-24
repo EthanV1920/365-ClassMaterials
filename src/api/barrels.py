@@ -97,7 +97,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         for index, potion in enumerate(barrel.potion_type):
 
             is_correct_barrel = False
-            if ("LARGE" in barrel.sku):
+            if (("LARGE" in barrel.sku) or ("MEDIUM" in barrel.sku)):
                 is_correct_barrel = True
 
             enough_gold = (barrel.price + will_spend < gold)
